@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>香港天氣資訊顯示屏</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-color) 0%, #1e1b4b 100%);
+            color: var(--text-main);
+            font-family: "PingFang HK", "Microsoft JhengHei", sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 頂部：時間與標題 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 50px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--accent);
+            letter-spacing: 2px;
+        }
+
+        .datetime {
+            text-align: right;
+        }
+
+        .time {
+            font-size: 64px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .date {
+            font-size: 24px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* 中間：現時天氣警告 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .warning-title {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: var(--text-muted);
+        }
+
+        #warning-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* 警告卡片基礎樣式 */
+        .warning-card {
+            background: var(--panel-bg);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 25px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            animation: fadeIn 0.5s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .warning-icon-wrapper {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .warning-icon-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        /* 專業級 SVG 向量備用圖示 */
+        .svg-fallback {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 80px;
+            height: 80px;
+        }
+
+        .warning-card .name {
+            font-size: 42px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .no-warning {
+            font-size: 40px;
+            color: #4ade80; 
+            background: rgba(30, 41, 59, 0.7);
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* 底部：九天天氣預報 */
+        .forecast-section {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 30px 50px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .forecast-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        #forecast-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .forecast-card {
+            background: var(--panel-bg);
+            flex: 1;
+            padding: 20px 10px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .f-date { font-size: 18px; font-weight: bold; }
+        .f-week { font-size: 16px; color: var(--text-muted); margin-bottom: 10px; }
+        .f-icon { width: 60px; height: 60px; margin: 10px 0; }
+        .f-temp { font-size: 20px; font-weight: bold; }
+        .f-rh { font-size: 14px; color: var(--text-muted); margin-top: 5px; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title">香港即時天氣資訊</div>
+        <div class="datetime">
+            <div class="time" id="clock-time">00:00:00</div>
+            <div class="date" id="clock-date">載入中...</div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="warning-title">現時生效天氣警告</div>
+        <div id="warning-container">
+            <div class="no-warning">載入資料中...</div>
+        </div>
+    </div>
+
+    <div class="forecast-section">
+        <div class="forecast-title">九天天氣預報</div>
+        <div id="forecast-container"></div>
+    </div>
+
+    <script>
+        // --- 1. 時鐘功能 ---
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-HK', { hour12: false });
+            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${days[now.getDay()]}`;
+            document.getElementById('clock-time').innerText = timeStr;
+            document.getElementById('clock-date').innerText = dateStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 2. 官方圖示檔名對照表 ---
+        const iconMap = {
+            "VHOT": "vhot", "WCCOLD": "cold", "WTS": "ts",
+            "WRAINY": "rainy", "WRAINR": "rainr", "WRAINB": "rainb",
+            "TC1": "tc1", "TC3": "tc3", "TC8NE": "tc8ne", "TC8SE": "tc8se",
+            "TC8NW": "tc8nw", "TC8SW": "tc8sw", "TC9": "tc9", "TC10": "tc10",
+            "WMSGNL": "sms", "WLANDSLIP": "landslip", "WFIREY": "firey",
+            "WFIRER": "firer", "FROST": "frost", "WFNW": "ntwc"
+        };
+
+        // --- 3. 智能圖片錯誤處理 (三層防護) ---
+        window.handleImgError = function(img) {
+            const fileName = img.getAttribute('data-filename');
+            const step = parseInt(img.getAttribute('data-step') || '1');
+            
+            if (step === 1) {
+                // 嘗試 2: 天文台舊版 GIF 伺服器
+                img.src = `https://www.hko.gov.hk/tc/wxinfo/warning/images/${fileName}.gif`;
+                img.setAttribute('data-step', '2');
+            } else if (step === 2) {
+                // 嘗試 3: 透過跨域代理伺服器強制讀取天文台圖示
+                img.src = `https://wsrv.nl/?url=www.hko.gov.hk/img/warn/${fileName}.png`;
+                img.setAttribute('data-step', '3');
+            } else {
+                // 最終備用: 隱藏破圖，顯示純代碼渲染的專業 SVG 警告標誌 (非 Emoji)
+                img.style.display = 'none';
+                img.nextElementSibling.style.display = 'flex';
+            }
+        };
+
+        // --- 4. 獲取現時警告 ---
+        async function fetchWarnings() {
+            const apiURL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc";
+            try {
+                const response = await fetch(apiURL);
+                const data = await response.json();
+                const container = document.getElementById('warning-container');
+                container.innerHTML = ""; 
+
+                if (!data || Object.keys(data).length === 0) {
+                    container.innerHTML = '<div class="no-warning">✅ 現時並無生效的天氣警告</div>';
+                    return;
+                }
+
+                for (const key in data) {
+                    const warning = data[key];
+                    const fileName = iconMap[warning.code] || "ts";
+                    
+                    // 首選: 天文台官方最新高清 PNG
+                    const primaryUrl = `https://www.hko.gov.hk/img/warn/${fileName}.png`;
+
+                    container.innerHTML += `
+                        <div class="warning-card">
+                            <div class="warning-icon-wrapper">
+                                <img src="${primaryUrl}" 
+                                     alt="${warning.name}" 
+                                     data-filename="${fileName}" 
+                                     data-step="1"
+                                     referrerpolicy="no-referrer"
+                                     onerror="handleImgError(this)">
+                                
+                                <div class="svg-fallback" style="display:none;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#ffcc00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%;">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="name">${warning.name}</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error("無法獲取警告:", error);
+            }
+        }
+
+        // --- 5. 九天天氣預報 ---
+        async function fetchForecast() {
+            const apiURL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc";
+            try {
+                const response = await fetch(apiURL);
+                const data = await response.json();
+                const container = document.getElementById('forecast-container');
+                container.innerHTML = ""; 
+
+                const forecasts = data.weatherForecast;
+                
+                forecasts.forEach(day => {
+                    const dateStr = day.forecastDate;
+                    const displayDate = `${dateStr.substring(6,8)}/${dateStr.substring(4,6)}`;
+                    const iconUrl = `https://www.hko.gov.hk/images/HKOWxIconOutline/pic${day.ForecastIcon}.png`;
+
+                    const minTemp = day.forecastMintemp.value;
+                    const maxTemp = day.forecastMaxtemp.value;
+                    const minRh = day.forecastMinrh.value;
+                    const maxRh = day.forecastMaxrh.value;
+
+                    container.innerHTML += `
+                        <div class="forecast-card">
+                            <div class="f-date">${displayDate}</div>
+                            <div class="f-week">${day.week}</div>
+                            <img class="f-icon" src="${iconUrl}" alt="天氣圖示" referrerpolicy="no-referrer">
+                            <div class="f-temp">${minTemp}° - ${maxTemp}°</div>
+                            <div class="f-rh">${minRh}% - ${maxRh}%</div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error("無法獲取預報:", error);
+            }
+        }
+
+        fetchWarnings();
+        fetchForecast();
+        
+        setInterval(fetchWarnings, 300000); // 5分鐘更新警告
+        setInterval(fetchForecast, 1800000); // 30分鐘更新預報
+
+    </script>
+</body>
+</html>
