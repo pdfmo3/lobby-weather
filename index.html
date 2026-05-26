@@ -3,103 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer">
     <title>香港天氣資訊顯示屏</title>
     <style>
         :root {
             --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
             --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             background: linear-gradient(135deg, var(--bg-color) 0%, #1e1b4b 100%);
             color: var(--text-main);
             font-family: "PingFang HK", "Microsoft JhengHei", sans-serif;
             height: 100vh;
-            width: 100vw;
-            overflow: hidden; /* 防止出現卷軸 */
+            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        /* 使用 vw 單位，確保隨螢幕自動放大 */
+        /* 頂部：時間與標題 */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 2vw 3vw;
+            padding: 30px 50px;
             background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .title { font-size: 2.5vw; font-weight: bold; color: #38bdf8; }
-        .time { font-size: 5vw; font-weight: bold; }
-        .date { font-size: 1.8vw; color: #94a3b8; }
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--accent);
+            letter-spacing: 2px;
+        }
 
+        .datetime {
+            text-align: right;
+        }
+
+        .time {
+            font-size: 64px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .date {
+            font-size: 24px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* 中間：現時天氣警告 */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 2vw;
+            padding: 20px;
         }
 
-        .warning-title { font-size: 2vw; margin-bottom: 2vw; color: #94a3b8; }
+        .warning-title {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: var(--text-muted);
+        }
 
         #warning-container {
             display: flex;
-            gap: 2vw;
+            gap: 30px;
+            flex-wrap: wrap;
             justify-content: center;
-            width: 100%;
         }
 
+        /* 警告卡片基礎樣式 */
         .warning-card {
-            background: rgba(30, 41, 59, 0.7);
+            background: var(--panel-bg);
             display: flex;
             align-items: center;
-            gap: 1.5vw;
-            padding: 2vw 3vw;
-            border-radius: 2vw;
-            border: 0.2vw solid rgba(255, 255, 255, 0.1);
+            gap: 20px;
+            padding: 25px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            animation: fadeIn 0.5s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .warning-icon-wrapper { width: 6vw; height: 6vw; }
-        .warning-icon-wrapper img { width: 100%; height: 100%; object-fit: contain; }
-        .warning-card .name { font-size: 2.5vw; font-weight: bold; }
+        .warning-icon-wrapper {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
+        .warning-icon-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .emoji-fallback {
+            font-size: 80px;
+            line-height: 1;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .warning-card .name {
+            font-size: 42px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .no-warning {
+            font-size: 40px;
+            color: #4ade80; 
+            background: rgba(30, 41, 59, 0.7);
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* 底部：九天天氣預報 */
         .forecast-section {
             background: rgba(0, 0, 0, 0.4);
-            padding: 2vw 3vw;
-            height: 35vh; /* 佔據底部約 1/3 高度 */
+            padding: 30px 50px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .forecast-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: var(--accent);
         }
 
         #forecast-container {
             display: flex;
             justify-content: space-between;
-            height: 100%;
-            gap: 1vw;
+            gap: 15px;
         }
 
         .forecast-card {
-            background: rgba(30, 41, 59, 0.7);
+            background: var(--panel-bg);
             flex: 1;
-            padding: 1vw;
-            border-radius: 1vw;
+            padding: 20px 10px;
+            border-radius: 16px;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
-        .f-date { font-size: 1.5vw; font-weight: bold; }
-        .f-icon { width: 4vw; height: 4vw; margin: 0.5vw auto; }
-        .f-temp { font-size: 1.6vw; font-weight: bold; }
-        .f-rh { font-size: 1.2vw; color: #94a3b8; }
+        .f-date { font-size: 18px; font-weight: bold; }
+        .f-week { font-size: 16px; color: var(--text-muted); margin-bottom: 10px; }
+        .f-icon { width: 60px; height: 60px; margin: 10px 0; }
+        .f-temp { font-size: 20px; font-weight: bold; }
+        .f-rh { font-size: 14px; color: var(--text-muted); margin-top: 5px; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
+
     <header>
         <div class="title">香港即時天氣資訊</div>
         <div class="datetime">
@@ -110,50 +185,133 @@
 
     <div class="main-content">
         <div class="warning-title">現時生效天氣警告</div>
-        <div id="warning-container"><div class="no-warning">載入資料中...</div></div>
+        <div id="warning-container">
+            <div class="no-warning">載入資料中...</div>
+        </div>
     </div>
 
     <div class="forecast-section">
+        <div class="forecast-title">九天天氣預報</div>
         <div id="forecast-container"></div>
     </div>
 
     <script>
+        // 1. 時鐘功能
         function updateClock() {
             const now = new Date();
-            document.getElementById('clock-time').innerText = now.toLocaleTimeString('zh-HK', { hour12: false });
-            document.getElementById('clock-date').innerText = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+            const timeStr = now.toLocaleTimeString('zh-HK', { hour12: false });
+            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${days[now.getDay()]}`;
+            document.getElementById('clock-time').innerText = timeStr;
+            document.getElementById('clock-date').innerText = dateStr;
         }
-        setInterval(updateClock, 1000); updateClock();
+        setInterval(updateClock, 1000);
+        updateClock();
 
-        const iconMap = { "VHOT": "vhot", "WCCOLD": "cold", "WTS": "ts", "WRAINY": "rainy", "WRAINR": "rainr", "WRAINB": "rainb", "TC1": "tc1", "TC3": "tc3", "TC8NE": "tc8ne", "TC8SE": "tc8se", "TC8NW": "tc8nw", "TC8SW": "tc8sw", "TC9": "tc9", "TC10": "tc10", "WMSGNL": "sms", "WLANDSLIP": "landslip", "WFIREY": "firey", "WFIRER": "firer", "FROST": "frost", "WFNW": "ntwc" };
-
-        window.handleImgError = function(img) {
-            img.style.display = 'none';
+        // 2. 第三方網上資源對照表 (維基媒體共享資源，保證可讀取)
+        const warningMap = {
+            "VHOT": { file: "Very_Hot_Weather_Warning.png", emoji: "🥵" },
+            "WCCOLD": { file: "Cold_Weather_Warning.png", emoji: "🥶" },
+            "WTS": { file: "Thunderstorm_Warning.png", emoji: "⛈️" },
+            "WRAINY": { file: "Yellow_Rainstorm_Warning_Signal.png", emoji: "🟨" },
+            "WRAINR": { file: "Red_Rainstorm_Warning_Signal.png", emoji: "🟥" },
+            "WRAINB": { file: "Black_Rainstorm_Warning_Signal.png", emoji: "⬛" },
+            "TC1": { file: "No._1_Standby_Signal.png", emoji: "🌀" },
+            "TC3": { file: "No._3_Strong_Wind_Signal.png", emoji: "🌀" },
+            "TC8NE": { file: "No._8_Northeast_Gale_or_Storm_Signal.png", emoji: "🌀" },
+            "TC8SE": { file: "No._8_Southeast_Gale_or_Storm_Signal.png", emoji: "🌀" },
+            "TC8NW": { file: "No._8_Northwest_Gale_or_Storm_Signal.png", emoji: "🌀" },
+            "TC8SW": { file: "No._8_Southwest_Gale_or_Storm_Signal.png", emoji: "🌀" },
+            "TC9": { file: "No._9_Increasing_Gale_or_Storm_Signal.png", emoji: "🌀" },
+            "TC10": { file: "No._10_Hurricane_Signal.png", emoji: "🌀" },
+            "WMSGNL": { file: "Strong_Monsoon_Signal.png", emoji: "🌬️" },
+            "WLANDSLIP": { file: "Landslip_Warning.png", emoji: "⛰️" },
+            "WFIREY": { file: "Yellow_Fire_Danger_Warning.png", emoji: "🔥" },
+            "WFIRER": { file: "Red_Fire_Danger_Warning.png", emoji: "🔥" },
+            "FROST": { file: "Frost_Warning.png", emoji: "❄️" },
+            "WFNW": { file: "Special_Announcement_on_Flooding_in_the_northern_New_Territories.png", emoji: "🌊" }
         };
 
+        // 3. 獲取現時警告
         async function fetchWarnings() {
-            const res = await fetch("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc");
-            const data = await res.json();
-            const container = document.getElementById('warning-container');
-            container.innerHTML = Object.keys(data).length === 0 ? '<div class="no-warning" style="font-size:2vw;">✅ 現時並無生效的天氣警告</div>' : "";
-            for (const key in data) {
-                const fileName = iconMap[data[key].code] || "ts";
-                container.innerHTML += `<div class="warning-card"><div class="warning-icon-wrapper"><img src="https://www.hko.gov.hk/img/warn/${fileName}.png" onerror="handleImgError(this)"></div><div class="name">${data[key].name}</div></div>`;
+            const apiURL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc";
+            try {
+                const response = await fetch(apiURL);
+                const data = await response.json();
+                const container = document.getElementById('warning-container');
+                container.innerHTML = ""; 
+
+                if (!data || Object.keys(data).length === 0) {
+                    container.innerHTML = '<div class="no-warning">✅ 現時並無生效的天氣警告</div>';
+                    return;
+                }
+
+                for (const key in data) {
+                    const warning = data[key];
+                    const wData = warningMap[warning.code] || { file: "invalid.png", emoji: "⚠️" };
+                    
+                    // 使用 Wikimedia 的特有安全圖片獲取路徑
+                    const imgUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${wData.file}`;
+
+                    // onerror 機制：如果維基圖片失效，立刻隱藏圖片並顯示備用 Emoji，絕不出現 X 死圖
+                    container.innerHTML += `
+                        <div class="warning-card">
+                            <div class="warning-icon-wrapper">
+                                <img src="${imgUrl}" alt="${warning.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div class="emoji-fallback" style="display:none;">${wData.emoji}</div>
+                            </div>
+                            <div class="name">${warning.name}</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error("無法獲取警告:", error);
             }
         }
 
+        // 4. 九天天氣預報
         async function fetchForecast() {
-            const res = await fetch("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc");
-            const data = await res.json();
-            const container = document.getElementById('forecast-container');
-            container.innerHTML = "";
-            data.weatherForecast.forEach(day => {
-                container.innerHTML += `<div class="forecast-card"><div class="f-date">${day.forecastDate.substring(6,8)}/${day.forecastDate.substring(4,6)}</div><img class="f-icon" src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic${day.ForecastIcon}.png"><div class="f-temp">${day.forecastMintemp.value}°-${day.forecastMaxtemp.value}°</div><div class="f-rh">${day.forecastMinrh.value}%-${day.forecastMaxrh.value}%</div></div>`;
-            });
+            const apiURL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc";
+            try {
+                const response = await fetch(apiURL);
+                const data = await response.json();
+                const container = document.getElementById('forecast-container');
+                container.innerHTML = ""; 
+
+                const forecasts = data.weatherForecast;
+                
+                forecasts.forEach(day => {
+                    const dateStr = day.forecastDate;
+                    const displayDate = `${dateStr.substring(6,8)}/${dateStr.substring(4,6)}`;
+                    // 預報圖示不受天文台防盜鏈限制，可繼續安心使用
+                    const iconUrl = `https://www.hko.gov.hk/images/HKOWxIconOutline/pic${day.ForecastIcon}.png`;
+
+                    const minTemp = day.forecastMintemp.value;
+                    const maxTemp = day.forecastMaxtemp.value;
+                    const minRh = day.forecastMinrh.value;
+                    const maxRh = day.forecastMaxrh.value;
+
+                    container.innerHTML += `
+                        <div class="forecast-card">
+                            <div class="f-date">${displayDate}</div>
+                            <div class="f-week">${day.week}</div>
+                            <img class="f-icon" src="${iconUrl}" alt="天氣圖示">
+                            <div class="f-temp">${minTemp}° - ${maxTemp}°</div>
+                            <div class="f-rh">${minRh}% - ${maxRh}%</div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error("無法獲取預報:", error);
+            }
         }
 
-        fetchWarnings(); fetchForecast();
-        setInterval(fetchWarnings, 300000); setInterval(fetchForecast, 1800000);
+        fetchWarnings();
+        fetchForecast();
+        
+        setInterval(fetchWarnings, 300000);
+        setInterval(fetchForecast, 1800000);
+
     </script>
 </body>
 </html>
