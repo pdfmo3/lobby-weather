@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Office Dashboard - Cyber Modern V19 (Privacy & 9-Day Focus)</title>
+    <style>
+        :root { 
+            --bg: #09090b; 
+            --panel: #18181b; 
+            --text-main: #f4f4f5; 
+            --text-muted: #a1a1aa;
+            --cyan: #22d3ee; 
+            --emerald: #34d399; 
+            --amber: #fbbf24; 
+            --rose: #f43f5e; 
+            --border: #27272a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            background: var(--bg); color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang HK", "Segoe UI", Roboto, sans-serif;
+            height: 100vh; width: 100vw; display: flex; flex-direction: column; 
+            padding: 1.2vh 1.2vw; overflow: hidden;
+        }
+        
+        /* --- 頂部區域 (完美底邊水平對齊) --- */
+        .header { 
+            display: flex; justify-content: space-between; align-items: flex-end; 
+            margin-bottom: 1vh; border-bottom: 2px solid var(--border); padding-bottom: 1.2vh;
+            height: 15vh; flex-shrink: 0;
+        }
+        
+        /* 使用 flex-end 讓時鐘與日期底部齊平 */
+        .clock-group { display: flex; align-items: flex-end; gap: 1.2vw; flex: 1; height: 100%; }
+        
+        .time-main { font-size: 15vh; font-weight: 900; color: var(--cyan); display: flex; align-items: baseline; line-height: 0.82; letter-spacing: -0.2vw;}
+        .time-sec { font-size: 5.5vh; color: var(--amber); margin-left: 0.5vw; font-weight: bold; }
+        
+        /* 調整 padding 與 margin 確保與時鐘數字底線一致 */
+        .date-group { 
+            display: flex; flex-direction: column; justify-content: flex-end; gap: 0.4vh; 
+            border-left: 3px solid var(--border); padding-left: 1.2vw; padding-bottom: 0.4vh;
+            height: 100%;
+        }
+        .date-line { font-size: 2.6vh; color: var(--text-muted); font-weight: bold; letter-spacing: 0.1vw; white-space: nowrap; line-height: 1.1; }
+
+        .off-work-group { text-align: right; display: flex; flex-direction: column; justify-content: flex-end; flex-shrink: 0; height: 100%; padding-bottom: 0.4vh; }
+        .cd-label { font-size: 2.2vh; color: var(--text-muted); margin-bottom: 0.2vh; font-weight: bold; }
+        .cd-value { font-size: 6vh; font-weight: 900; color: var(--emerald); line-height: 1; letter-spacing: 0.1vw; }
+
+        /* --- 主要佈局 (左 40% / 右 60%) --- */
+        .main-container { display: flex; gap: 1vw; flex: 1; min-height: 0; }
+        
+        .col-left { flex: 2; display: flex; flex-direction: column; gap: 1vh; min-height: 0; }
+        .col-right-wrapper { flex: 3; display: flex; flex-direction: column; gap: 1vh; min-height: 0; }
+
+        /* 面板共用樣式 */
+        .panel { 
+            background: var(--panel); border: 1px solid var(--border); border-radius: 0.8vw; 
+            padding: 1vh 1vw; display: flex; flex-direction: column;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); min-height: 0; overflow: hidden;
+        }
+        .panel-title { 
+            font-size: 2.2vh; font-weight: bold; color: var(--text-muted); 
+            margin-bottom: 0.8vh; display: flex; align-items: center; letter-spacing: 0.1vw; flex-shrink: 0; transition: all 0.3s ease;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        
+        /* --- 交通物流 (私隱保障 + 高對比色彩版) --- */
+        .transport-list { display: flex; flex-direction: column; gap: 0.8vh; flex: 1; justify-content: space-evenly; min-height: 0; }
+        
+        .transport-item { 
+            display: flex; flex-direction: column; flex: 1; justify-content: center; 
+            padding: 0.6vh 0.8vw; border-radius: 0.6vw; transition: all 0.3s ease;
+        }
+        
+        /* 🟨 城巴：明黃底色與邊框 */
+        .bg-citybus {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(202, 138, 4, 0.1) 100%);
+            border: 1px solid #eab308; border-left: 0.6vw solid #facc15;
+        }
+        .bg-citybus .transport-route { color: #fef08a; }
+
+        /* 🟥 九巴：鮮紅底色與邊框 */
+        .bg-kmb {
+            background: linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(225, 29, 72, 0.1) 100%);
+            border: 1px solid #f43f5e; border-left: 0.6vw solid #fb7185;
+        }
+        .bg-kmb .transport-route { color: #fecdd3; }
+
+        /* 🟦 渡輪：海洋深藍底色與邊框 */
+        .bg-ferry {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.28) 0%, rgba(2, 132, 199, 0.1) 100%);
+            border: 1px solid #0ea5e9; border-left: 0.6vw solid #38bdf8;
+        }
+        .bg-ferry .transport-route { color: #e0f2fe; }
+
+        .transport-route { font-size: 2.4vh; font-weight: bold; margin-bottom: 0.4vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .eta-grid { display: flex; justify-content: space-between; gap: 0.6vw; flex: 1; min-height: 0; }
+        .eta-cell { 
+            flex: 1; background: #18181b; border-radius: 0.4vw; border: 1px solid rgba(255,255,255,0.15);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0.2vh 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .hl-time { color: var(--emerald); font-size: 3.2vh; font-weight: 900; line-height: 1.1; }
+        .hl-mins { color: var(--amber); font-size: 1.8vh; font-weight: bold; }
+        .hl-empty { color: #52525b; font-size: 2.8vh; font-weight: bold; }
+
+        /* --- 天氣資料 --- */
+        .current-weather {
+            background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 0.6vw; padding: 0.6vh 1vw; margin-bottom: 0.8vh;
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        .cw-place { font-size: 1.6vh; color: var(--text-muted); font-weight: bold; display: flex; flex-direction: column; }
+        .cw-place-hl { color: var(--text-main); font-size: 2vh; }
+        .cw-data-group { display: flex; gap: 1.5vw; align-items: center; }
+        .cw-item { font-size: 2.8vh; font-weight: 900; display: flex; align-items: center; gap: 0.5vw; }
+        
+        .warn-badge {
+            background: rgba(244, 63, 94, 0.15); border: 1px solid var(--rose);
+            padding: 0.3vh 0.6vw; border-radius: 0.4vw;
+            display: flex; align-items: center; gap: 0.3vw;
+            font-size: 1.6vh; color: var(--text-main); font-weight: bold; white-space: nowrap;
+        }
+        
+        /* 9天天氣網格 (前重後輕視覺架構) */
+        .weather-9day-grid {
+            display: flex; gap: 0.5vw; flex: 1; min-height: 0; align-items: stretch; justify-content: space-between;
+        }
+        .fnd-card {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 0.6vw; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 0.3vh 0.2vw; transition: background 0.2s;
+        }
+        .fnd-card:hover { background: rgba(255,255,255,0.08); }
+        
+        /* 🔥 前 3 天巨大化特寫 */
+        .fnd-card.major {
+            flex: 1.8; background: rgba(34, 211, 238, 0.04); border: 1px solid rgba(34, 211, 238, 0.25);
+            gap: 0.3vh;
+        }
+        .fnd-card.major .fnd-date { font-size: 2.6vh; font-weight: 900; color: #fff; }
+        .fnd-card.major .fnd-icon { font-size: 4.5vh; margin: 0.2vh 0; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
+        .fnd-card.major .fnd-temp { font-size: 2vh; font-weight: 900; color: var(--amber); }
+        .fnd-card.major .fnd-rh { font-size: 1.5vh; color: var(--cyan); font-weight: bold; }
+
+        /* 餘下 6 天緊湊顯示 */
+        .fnd-card.minor {
+            flex: 1; gap: 0.1vh; opacity: 0.85;
+        }
+        .fnd-card.minor .fnd-date { font-size: 1.8vh; font-weight: bold; color: var(--text-muted); }
+        .fnd-card.minor .fnd-icon { font-size: 2.8vh; margin: 0.1vh 0; }
+        .fnd-card.minor .fnd-temp { font-size: 1.4vh; font-weight: bold; color: var(--amber); }
+        .fnd-card.minor .fnd-rh { font-size: 1.1vh; color: var(--text-muted); }
+
+        /* --- 相機與 CCTV 框架 --- */
+        .cam-box { flex: 1; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+        .cam-label { 
+            font-size: 1.8vh; color: var(--text-muted); margin-bottom: 0.4vh; 
+            font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .cam-frame { flex: 1; border-radius: 0.6vw; border: 1px solid var(--border); overflow: hidden; background: #000; position: relative; }
+        .cam-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* --- 網頁嵌入圖表 (Windy) --- */
+        .iframe-container { flex: 1; border-radius: 0.6vw; border: 1px solid var(--border); overflow: hidden; position: relative; background: #000; }
+        .iframe-container iframe { width: 100%; height: 100%; border: none; display: block; }
+        .bottom-media-row { display: flex; gap: 1vw; flex: 1.3; min-height: 0; }
+
+        /* --- 底部實時資訊列 (跑馬燈降速 20% -> 45s) --- */
+        .footer-bar {
+            height: 6.5vh; margin-top: 1vh; display: flex; gap: 1vw; align-items: center; flex-shrink: 0;
+        }
+        .ticker-box {
+            flex: 1; height: 100%; background: var(--panel); border: 2px solid var(--border);
+            border-radius: 0.8vw; display: flex; align-items: center; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: all 0.5s ease;
+        }
+        .ticker-label {
+            height: 100%; padding: 0 1.5vw; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 3.2vh; white-space: nowrap; border-right: 2px solid var(--border);
+            background: rgba(34, 211, 238, 0.15); color: var(--cyan); transition: all 0.5s ease;
+            letter-spacing: 0.1vw;
+        }
+        .ticker-content { flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
+        
+        /* 速度由 35s 減慢至 45s (降低約 20-25% 速度) */
+        .ticker-text {
+            display: inline-block; white-space: nowrap; font-size: 4vh; font-weight: 900; color: var(--text-main);
+            padding-left: 100%; animation: ticker-scroll 45s linear infinite; letter-spacing: 0.1vw;
+        }
+        @keyframes ticker-scroll {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+        
+        /* 🚨 惡劣天氣風暴警告狀態樣式 */
+        .ticker-box.alert-mode { border-color: var(--rose); background: rgba(244, 63, 94, 0.1); }
+        .ticker-box.alert-mode .ticker-label { background: var(--rose); color: #fff; animation: pulse-alert 1.5s infinite; }
+        .ticker-box.alert-mode .ticker-text { color: var(--amber); }
+        @keyframes pulse-alert { 50% { opacity: 0.7; } }
+
+        .refresh-badge {
+            height: 100%; padding: 0 1.2vw; background: #27272a; border: 2px solid #3f3f46;
+            border-radius: 0.8vw; display: flex; align-items: center; justify-content: center;
+            font-size: 2.2vh; color: var(--text-muted); font-weight: bold; white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="clock-group">
+            <div class="time-main">
+                <span id="time-hours-mins">00:00</span>
+                <span class="time-sec" id="time-secs">00</span>
+            </div>
+            <div class="date-group">
+                <div class="date-line" id="digital-date-1">--月--日</div>
+                <div class="date-line" id="digital-date-2">星期--</div>
+            </div>
+        </div>
+
+        <div class="off-work-group">
+            <div class="cd-label" id="cd-label">STATUS</div>
+            <div class="cd-value" id="off-work-countdown">--:--:--</div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        
+        <!-- 左欄 (40%)：交通預報 (極度注重私隱版) -->
+        <div class="col-left">
+            <div class="panel" style="flex: 1.3;">
+                <div class="panel-title">🚌 實時交通預報</div>
+                <div class="transport-list">
+                    
+                    <!-- 🟨 城巴 26 號線 -->
+                    <div class="transport-item bg-citybus">
+                        <div class="transport-route">🟨 城巴 26 號線 (荷里活道公園)</div>
+                        <div class="eta-grid">
+                            <div class="eta-cell" id="bus-26-eta1"><div class="hl-empty">--:--</div></div>
+                            <div class="eta-cell" id="bus-26-eta2"><div class="hl-empty">--:--</div></div>
+                            <div class="eta-cell" id="bus-26-eta3"><div class="hl-empty">--:--</div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 🟨 回家 - 城巴 (已刪除往荃灣等敏感資訊) -->
+                    <div class="transport-item bg-citybus">
+                        <div class="transport-route">🟨 回家 - 城巴</div>
+                        <div class="eta-grid">
+                            <div class="eta-cell" id="bus-930-eta1"><div class="hl-empty">--:--</div></div>
+                            <div class="eta-cell" id="bus-930-eta2"><div class="hl-empty">--:--</div></div>
+                            <div class="eta-cell" id="bus-930-eta3"><div class="hl-empty">--:--</div></div>
+                        </div>
+                    </div>
+
+                    <!-- 🟦 渡輪 與 🟥 九巴 並排顯示 -->
+                    <div style="display: flex; gap: 0.8vw; flex: 1; min-height: 0;">
+                        <!-- 渡輪 (海洋深藍底色) -->
+                        <div class="transport-item bg-ferry" style="flex: 1.5;">
+                            <div class="transport-route">🟦 🚢 渡輪 (中環)</div>
+                            <div class="eta-grid">
+                                <div class="eta-cell" id="ferry-mw-eta1"><div class="hl-empty">--:--</div></div>
+                                <div class="eta-cell" id="ferry-mw-eta2"><div class="hl-empty">--:--</div></div>
+                            </div>
+                        </div>
+                        <!-- 九巴 (已刪除 934 等編號，保障隱私) -->
+                        <div class="transport-item bg-kmb" style="flex: 1.1;">
+                            <div class="transport-route">🟥 🚌 回家 - 九巴</div>
+                            <div class="eta-grid">
+                                <div class="eta-cell" id="bus-934-eta1"><div class="hl-empty">--:--</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="panel" style="flex: 0.7; padding-bottom: 1vh;">
+                <div class="panel-title">📷 交通實時監控</div>
+                <div class="cam-box">
+                    <div class="cam-label" id="cctv-label" style="color: var(--cyan);">載入中...</div>
+                    <div class="cam-frame">
+                        <img id="td-cctv" class="cam-img" src="" alt="Traffic CCTV">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右方綜合區塊 (佔 60%) -->
+        <div class="col-right-wrapper">
+            
+            <!-- 上半部：實時天氣 + 前重後輕 9 天天氣預報 -->
+            <div class="panel" style="flex: 0.7;">
+                <div class="panel-title">🌤️ 實時天氣 及 9天天氣預報 (天文台)</div>
+                <div class="current-weather">
+                    <div class="cw-place">
+                        <span>CURRENT</span>
+                        <span class="cw-place-hl">📍 上環</span>
+                    </div>
+                    <div class="cw-data-group">
+                        <div class="cw-item" style="color: var(--amber);" id="cw-temp">--°C</div>
+                        <div class="cw-item" style="color: var(--cyan);" id="cw-hum">💧 --%</div>
+                        <div id="cw-warn" style="display: flex; gap: 0.5vw;"></div>
+                    </div>
+                </div>
+                <!-- 9天天氣水平網格 (前 3 天特寫 + 後 6 天縮圖) -->
+                <div class="weather-9day-grid" id="weather-9day-grid">
+                    <div style="text-align: center; color: var(--text-muted); font-size: 2vh; width: 100%; align-self: center;">正在載入 9 天天氣預報...</div>
+                </div>
+            </div>
+
+            <!-- 下半部：Windy 與 天氣相片左右並排 -->
+            <div class="bottom-media-row">
+                <div class="panel" style="flex: 2; padding-bottom: 1vh;">
+                    <div class="panel-title" id="windy-title" style="margin-bottom: 0.5vh; color: var(--cyan);">📡 實時天氣雷達 (Windy)</div>
+                    <div class="iframe-container">
+                        <iframe id="windy-iframe" src=""></iframe>
+                    </div>
+                </div>
+
+                <div class="panel" style="flex: 1; padding-bottom: 1vh;">
+                    <div class="panel-title">📷 實時影像</div>
+                    <div class="cam-box">
+                        <div class="cam-label">中環碼頭 (望維港)</div>
+                        <div class="cam-frame">
+                            <img id="hko-cam" class="cam-img" src="" alt="Live Cam">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 底部實時跑馬燈 (速度已減慢 20% 以利閱讀) -->
+    <div class="footer-bar">
+        <div class="ticker-box" id="ticker-box">
+            <div class="ticker-label" id="ticker-label">📰 實時新聞</div>
+            <div class="ticker-content">
+                <div class="ticker-text" id="news-ticker-text">正在載入新聞與天文台最新提示...</div>
+            </div>
+        </div>
+        <div class="refresh-badge" id="refresh-countdown">REFRESH: --s</div>
+    </div>
+
+    <script>
+        /* === 系統時間與倒數 === */
+        function updateTime() {
+            const now = new Date();
+            const hrs = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            const secs = String(now.getSeconds()).padStart(2, '0');
+            
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const dayStr = days[now.getDay()];
+            
+            document.getElementById('time-hours-mins').innerText = `${hrs}:${mins}`;
+            document.getElementById('time-secs').innerText = secs;
+            document.getElementById('digital-date-1').innerText = `${month}月${date}日`;
+            document.getElementById('digital-date-2').innerText = `星期${dayStr}`;
+
+            const day = now.getDay();
+            if (day >= 1 && day <= 5) {
+                const currentHour = now.getHours();
+                if (currentHour < 13) {
+                    const lunchTime = new Date(now);
+                    lunchTime.setHours(13, 0, 0, 0); 
+                    renderCountdown(lunchTime - now, "🍔 距離午膳 (LUNCH)");
+                } else {
+                    const offTime = new Date(now);
+                    offTime.setHours(17, 18, 0, 0); 
+                    renderCountdown(offTime - now, "🏃‍♂️ 距離下班 (OFF-WORK)");
+                }
+            } else {
+                document.getElementById('cd-label').innerText = "☕ 週末休息";
+                document.getElementById('off-work-countdown').innerText = "HOLIDAY";
+                document.getElementById('off-work-countdown').style.color = "var(--text-muted)";
+            }
+        }
+
+        function renderCountdown(diff, label) {
+            document.getElementById('cd-label').innerText = label;
+            if (diff > 0) {
+                const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+                const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+                const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+                document.getElementById('off-work-countdown').innerText = `${h}:${m}:${s}`;
+                document.getElementById('off-work-countdown').style.color = "var(--emerald)";
+            } else {
+                document.getElementById('off-work-countdown').innerText = "00:00:00";
+                document.getElementById('off-work-countdown').style.color = "var(--cyan)";
+            }
+        }
+
+        /* === 交通 ETA 工具 (後台 API 維持精準運作) === */
+        function formatClockTime(isoString) {
+            if (!isoString) return "--:--";
+            const d = new Date(isoString);
+            return String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
+        }
+
+        function getMinutesDiff(etaTimeString) {
+            if (!etaTimeString) return null;
+            const now = new Date();
+            const etaTime = new Date(etaTimeString);
+            const diffMs = etaTime - now;
+            return Math.ceil(diffMs / 1000 / 60);
+        }
+
+        function generateEtaBox(timeStr, minsLeft) {
+            let status = ""; let colorStyle = "";
+            if (minsLeft <= 0) { status = "即將到站"; colorStyle = "color: var(--rose);"; } 
+            else { status = `${minsLeft} 分鐘`; }
+            return `<div class="hl-time">${timeStr}</div><div class="hl-mins" style="${colorStyle}">${status}</div>`;
+        }
+        function generateEmptyBox() { return `<div class="hl-empty">--:--</div>`; }
+
+        /* 城巴與九巴 API */
+        async function fetchCitybusETA(url, elementPrefix) {
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                let validData = [];
+                if (result && result.data && result.data.length > 0) {
+                    validData = result.data.filter(d => d.eta).sort((a, b) => a.eta_seq - b.eta_seq);
+                }
+                for (let i = 1; i <= 3; i++) {
+                    let el = document.getElementById(`${elementPrefix}-eta${i}`);
+                    if (!el) continue;
+                    if (validData[i-1]) {
+                        el.innerHTML = generateEtaBox(formatClockTime(validData[i-1].eta), getMinutesDiff(validData[i-1].eta));
+                    } else {
+                        el.innerHTML = generateEmptyBox();
+                    }
+                }
+            } catch (error) {
+                for(let i=1; i<=3; i++) {
+                    let el = document.getElementById(`${elementPrefix}-eta${i}`);
+                    if (el) el.innerHTML = `<div class="hl-empty" style="color:var(--rose);">錯誤</div>`;
+                }
+            }
+        }
+
+        async function fetchKmbEta(route, elementId) {
+            try {
+                const response = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}/1`);
+                const result = await response.json();
+                let el = document.getElementById(elementId);
+                if (!el) return;
+                if (result && result.data && result.data.length > 0) {
+                    let validData = result.data.filter(d => d.eta && d.dir === 'I' && parseInt(d.seq, 10) === 6 && getMinutesDiff(d.eta) >= 0);
+                    validData.sort((a, b) => new Date(a.eta) - new Date(b.eta));
+                    if (validData.length > 0) {
+                        el.innerHTML = generateEtaBox(formatClockTime(validData[0].eta), getMinutesDiff(validData[0].eta));
+                    } else { el.innerHTML = generateEmptyBox(); }
+                } else { el.innerHTML = generateEmptyBox(); }
+            } catch (error) {
+                let el = document.getElementById(elementId);
+                if (el) el.innerHTML = `<div class="hl-empty" style="color:var(--rose);">錯誤</div>`;
+            }
+        }
+
+        /* 渡輪預測 */
+        const ferrySchedule = ['07:00', '07:30', '07:50', '08:30', '08:50', '09:30', '10:00', '10:30', '12:30', '14:30', '16:30', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:30'];
+        function calculateLocalFerryETA() {
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            let upcoming = [];
+            for (let time of ferrySchedule) {
+                let [h, m] = time.split(':').map(Number);
+                let scheduleMins = h * 60 + m;
+                if (scheduleMins >= currentMins) upcoming.push({ timeStr: time, diff: scheduleMins - currentMins });
+                if (upcoming.length === 2) break;
+            }
+            let i = 0;
+            while (upcoming.length < 2 && i < ferrySchedule.length) {
+                let [h, m] = ferrySchedule[i].split(':').map(Number);
+                upcoming.push({ timeStr: ferrySchedule[i], diff: (h + 24) * 60 + m - currentMins });
+                i++;
+            }
+            for (let j = 1; j <= 2; j++) {
+                let el = document.getElementById(`ferry-mw-eta${j}`);
+                if (!el) continue;
+                if (upcoming[j-1]) el.innerHTML = generateEtaBox(upcoming[j-1].timeStr, upcoming[j-1].diff);
+                else el.innerHTML = generateEmptyBox();
+            }
+        }
+
+        /* === 天氣 API (前 3 天巨大化特寫 + 極簡日期) === */
+        function getWarnIcon(code, name) {
+            let emoji = "⚠️";
+            if(code.includes("WRAIN")) emoji = "🌧️";
+            else if(code.includes("WTS")) emoji = "⚡";
+            else if(code.includes("TC")) emoji = "🌀";
+            else if(code.includes("WHOT")) emoji = "🥵";
+            else if(code.includes("WCOLD")) emoji = "🥶";
+            
+            let shortName = name.replace("警告信號", "").replace("警告", "").replace("信號", "");
+            if(shortName === "黃色暴雨") shortName = "黃雨";
+            if(shortName === "紅色暴雨") shortName = "紅雨";
+            if(shortName === "黑色暴雨") shortName = "黑雨";
+            
+            return `<div class="warn-badge"><span>${emoji}</span><span>${shortName}</span></div>`;
+        }
+
+        async function fetchWeather() {
+            try {
+                const currentRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
+                const currentData = await currentRes.json();
+                let temp = "--";
+                if(currentData.temperature && currentData.temperature.data) {
+                    const hkp = currentData.temperature.data.find(d => d.place === "香港公園");
+                    temp = hkp ? hkp.value : currentData.temperature.data[0].value; 
+                }
+                let hum = (currentData.humidity && currentData.humidity.data.length > 0) ? currentData.humidity.data[0].value : "--";
+                
+                document.getElementById('cw-temp').innerText = `${temp}°C`;
+                document.getElementById('cw-hum').innerText = `💧 ${hum}%`;
+            } catch (e) {}
+
+            try {
+                const warnRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc');
+                const warnData = await warnRes.json();
+                let warnHtml = '';
+                if (warnData && Object.keys(warnData).length > 0) {
+                    for (const key in warnData) warnHtml += getWarnIcon(warnData[key].code, warnData[key].name);
+                } else {
+                    warnHtml = `<span style="font-size: 1.6vh; color: var(--text-muted); font-weight: normal;">(無天氣警報)</span>`;
+                }
+                document.getElementById('cw-warn').innerHTML = warnHtml;
+            } catch (e) {}
+
+            try {
+                const forecastRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
+                const forecastData = await forecastRes.json();
+                
+                if (forecastData && forecastData.weatherForecast) {
+                    // 渲染 9 天天氣網格卡片
+                    let fndHtml = '';
+                    forecastData.weatherForecast.forEach((day, index) => {
+                        // 解析並轉換為極簡單字/雙字日期 (例如 03 變 3, 25 變 25)
+                        const dd = parseInt(day.forecastDate.substring(6, 8), 10);
+                        const weatherDesc = day.forecastWeather;
+                        
+                        let icon = '☁️'; 
+                        if (weatherDesc.includes('雷')) {
+                            icon = '⛈️';
+                        } else if (weatherDesc.includes('驟雨')) {
+                            icon = '🌦️';
+                        } else if (weatherDesc.includes('雨')) {
+                            icon = '🌧️';
+                        } else if (weatherDesc.includes('部分時間有陽光') || weatherDesc.includes('短暫時間有陽光') || weatherDesc.includes('明朗')) {
+                            icon = '⛅';
+                        } else if (weatherDesc.includes('天晴') || (weatherDesc.includes('晴') && !weatherDesc.includes('雲'))) {
+                            icon = '☀️';
+                        } else if (weatherDesc.includes('多雲') || weatherDesc.includes('陰')) {
+                            icon = '☁️';
+                        } else if (weatherDesc.includes('晴')) {
+                            icon = '🌤️';
+                        }
+                        
+                        // 判斷是否為前 3 天，套用巨大化特寫樣式 (major)，後 6 天為 minor
+                        const cardClass = index < 3 ? 'fnd-card major' : 'fnd-card minor';
+                        
+                        fndHtml += `
+                            <div class="${cardClass}">
+                                <div class="fnd-date">${dd}日</div>
+                                <div class="fnd-icon" title="${weatherDesc}">${icon}</div>
+                                <div class="fnd-temp">${day.forecastMintemp.value}-${day.forecastMaxtemp.value}°</div>
+                                <div class="fnd-rh">💧${day.forecastMinrh.value}%</div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('weather-9day-grid').innerHTML = fndHtml;
+                }
+            } catch (e) {
+                document.getElementById('weather-9day-grid').innerHTML = `<div style="color: var(--rose); width:100%; text-align:center; align-self:center;">預報數據連線失敗</div>`;
+            }
+        }
+
+        /* === 🚨 實時新聞與風暴跑馬燈系統 === */
+        async function fetchNewsAndStorms() {
+            let tickerItems = [];
+            let isAlertMode = false;
+
+            try {
+                const swtRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=swt&lang=tc');
+                const swtData = await swtRes.json();
+                if (swtData && swtData.swt && swtData.swt.length > 0) {
+                    swtData.swt.forEach(item => {
+                        tickerItems.push(`【🚨 天文台突發警報】${item.desc}`);
+                    });
+                    isAlertMode = true;
+                }
+            } catch (e) {}
+
+            try {
+                const newsRes = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml');
+                const newsData = await newsRes.json();
+                if (newsData && newsData.items && newsData.items.length > 0) {
+                    newsData.items.slice(0, 6).forEach(item => {
+                        tickerItems.push(`【港台本地新聞】${item.title}`);
+                    });
+                }
+            } catch (e) {}
+
+            const tickerBox = document.getElementById('ticker-box');
+            const tickerLabel = document.getElementById('ticker-label');
+            const tickerText = document.getElementById('news-ticker-text');
+
+            if (tickerItems.length > 0) {
+                tickerText.innerText = tickerItems.join('   ｜   ');
+                if (isAlertMode) {
+                    tickerBox.classList.add('alert-mode');
+                    tickerLabel.innerText = "🚨 風暴/惡劣天氣預警";
+                } else {
+                    tickerBox.classList.remove('alert-mode');
+                    tickerLabel.innerText = "📰 本地即時新聞";
+                }
+            } else {
+                tickerText.innerText = "目前無最新突發消息或本地即時新聞。";
+            }
+        }
+
+        /* === 相片與 CCTV 更新系統 === */
+        function updateImages() {
+            document.getElementById('hko-cam').src = `https://www.hko.gov.hk/wxinfo/aws/hko_mica/cp1/latest_CP1.jpg?t=${new Date().getTime()}`;
+        }
+
+        const cctvList = [
+            { id: 'K911F', name: '西九龍公路油麻地北交匯處' },
+            { id: 'H702F', name: '西區海底隧道香港入口' },
+            { id: 'TC560F', name: '青馬大橋' }
+        ];
+        let cctvIndex = 0;
+
+        function rotateCCTV() {
+            const cam = cctvList[cctvIndex];
+            const labelEl = document.getElementById('cctv-label');
+            const imgEl = document.getElementById('td-cctv');
+            if(labelEl && imgEl) {
+                labelEl.innerText = `${cam.name}`;
+                imgEl.src = `https://tdcctv.data.one.gov.hk/${cam.id}.JPG?t=${new Date().getTime()}`;
+            }
+            cctvIndex = (cctvIndex + 1) % cctvList.length;
+        }
+
+        /* === Windy 二合一輪播系統 (30 秒) === */
+        const windyMaps = [
+            { 
+                title: "📡 實時天氣雷達 (Windy)", 
+                url: "https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=9&overlay=radar&product=radar&level=surface&lat=22.350&lon=114.170" 
+            },
+            { 
+                title: "🌬️ 實時風向流動 (Windy)", 
+                url: "https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=8&overlay=wind&product=ecmwf&level=surface&lat=22.350&lon=114.170" 
+            }
+        ];
+        let windyIndex = 0;
+
+        function rotateWindy() {
+            const map = windyMaps[windyIndex];
+            document.getElementById('windy-title').innerText = map.title;
+            document.getElementById('windy-iframe').src = map.url;
+            windyIndex = (windyIndex + 1) % windyMaps.length;
+        }
+
+        /* === 初始化與排程 === */
+        function updateAllData() {
+            fetchCitybusETA('https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/002741/26', 'bus-26');
+            fetchCitybusETA('https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/001193/930', 'bus-930');
+            fetchKmbEta('934', 'bus-934-eta1'); 
+            calculateLocalFerryETA();
+            fetchWeather();
+            updateImages(); 
+            fetchNewsAndStorms(); 
+        }
+
+        updateTime();
+        setInterval(updateTime, 1000); 
+
+        rotateCCTV();
+        setInterval(rotateCCTV, 5000);
+
+        rotateWindy();
+        setInterval(rotateWindy, 30000);
+
+        setInterval(fetchNewsAndStorms, 300000);
+
+        updateAllData();
+        let countdown = 30;
+        setInterval(() => {
+            countdown--;
+            if (countdown < 0) {
+                countdown = 30;
+                updateAllData(); 
+            }
+            document.getElementById('refresh-countdown').innerText = `REFRESH: ${countdown}s`;
+        }, 1000);
+    </script>
+</body>
+</html>
