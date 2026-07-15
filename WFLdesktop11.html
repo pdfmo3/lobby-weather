@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黃鳳翎管理處實時資訊板</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'PingFang HK', 'Microsoft JhengHei', 'Heiti TC', sans-serif;
+        }
+
+        /* 主容器 */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ================= 1. 頂部 10%：Logo、標題與時間 ================= */
+        .header-section {
+            flex: 0 0 10%;
+            height: 10%;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 2px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 3%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .logo {
+            height: 7vh; 
+            width: auto;
+            max-width: 15vw;
+            object-fit: contain;
+            margin-right: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .header-title h1 {
+            font-size: 3.5vh;
+            color: #f8fafc;
+            font-weight: 500;
+            letter-spacing: 3px;
+        }
+
+        /* 日期與時間同列顯示 */
+        .datetime-display {
+            display: flex;
+            flex-direction: row;
+            align-items: baseline; 
+            gap: 2vw; 
+        }
+
+        .date-text {
+            font-size: 3vh; 
+            font-weight: 400;
+            color: #cbd5e1;
+            letter-spacing: 1px;
+        }
+
+        .time-text {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        /* 時與分為鮮黃色 */
+        .time-hm {
+            font-size: 6.5vh; 
+            font-weight: 500;
+            color: #ffde00; 
+            text-shadow: 0 0 12px rgba(255, 222, 0, 0.35); 
+        }
+
+        /* 秒數灰藍色 */
+        .time-sec {
+            font-size: 4vh; 
+            font-weight: 300;
+            color: #94a3b8; 
+            text-shadow: none;
+        }
+
+        /* ================= 2. 中間核心區 82% ================= */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            height: 82%;
+            background-color: #0f172a;
+        }
+
+        /* 左側：主 Google Slide (佔 75% 寬度) */
+        .slide-section {
+            flex: 0 0 75%;
+            height: 100%;
+            background-color: #000;
+            position: relative;
+        }
+
+        .slide-section iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* 右側：側邊資訊欄 (佔 25% 寬度) */
+        .sidebar-section {
+            flex: 0 0 25%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5vh;
+            gap: 1.5vh; 
+            border-left: 2px solid #334155;
+            background-color: #0f172a;
+        }
+
+        /* --- 大輪播容器：三面板輪流顯示 --- */
+        .weather-carousel-container {
+            flex: 0 0 58%;
+            position: relative;
+            width: 100%;
+        }
+
+        .carousel-item {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out; 
+            z-index: 1;
+            pointer-events: none; 
+        }
+
+        .carousel-item.active {
+            opacity: 1;
+            z-index: 2;
+            pointer-events: auto;
+        }
+
+        /* 面板 1：天氣佈局 */
+        .panel-a-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5vh;
+        }
+
+        /* 模塊 A1: 上環現時天氣 */
+        .current-weather-card {
+            flex: 0 0 42%; 
+            background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
+            border: 1.5px solid #334155;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1vh;
+            text-align: center;
+        }
+
+        .c-title {
+            font-size: 1.8vh;
+            color: #38bdf8;
+            font-weight: 500;
+            margin-bottom: 0.5vh;
+        }
+
+        .c-main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5vw;
+        }
+
+        .c-icon img {
+            width: 7vh; 
+            height: 7vh;
+            object-fit: contain;
+        }
+
+        .c-temp {
+            font-size: 6.5vh; 
+            font-weight: 700;
+            color: #f8fafc;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .c-desc {
+            font-size: 1.5vh;
+            color: #94a3b8;
+            margin-top: 1vh;
+        }
+
+        /* 模塊 A2: 4天天氣預報 */
+        .forecast-section {
+            flex: 1; 
+            background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
+            border: 1.5px solid #334155;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            padding: 1vh;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .carousel-title {
+            font-size: 1.6vh;
+            color: #38bdf8;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 1vh;
+            flex: 0 0 auto;
+        }
+
+        .forecast-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1vh;
+        }
+
+        .forecast-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5vh;
+        }
+
+        .f-date-day { 
+            font-size: 1.5vh; 
+            color: #94a3b8; 
+            margin-bottom: 0.5vh;
+        }
+        
+        .f-main {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8vw;
+            width: 100%;
+        }
+
+        .f-icon img { 
+            width: 4.5vh; 
+            height: 4.5vh; 
+            object-fit: contain;
+        }
+
+        .f-temp { 
+            font-size: 2.2vh; 
+            font-weight: 700; 
+            color: #f8fafc; 
+        }
+
+        /* 面板 2 & 3：Windy 圖像佈局 */
+        .panel-iframe-layout {
+            background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
+            border: 1.5px solid #334155;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            padding: 1vh;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .windy-wrapper {
+            flex: 1;
+            width: 100%;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .windy-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* --- 下方模塊：迷你版 Google Slide --- */
+        .mini-slide-card {
+            flex: 1; 
+            background: #000;
+            border: 1.5px solid #334155; /* 改為與天氣卡片相同的深邃灰藍邊框 */
+            border-radius: 8px;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* 配合深色邊框的柔和陰影 */
+        }
+
+        .mini-slide-card iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* ================= 3. 底部 8%：走馬燈 ================= */
+        .ticker-bar {
+            flex: 0 0 8%;
+            height: 8%;
+            background: #1e293b;
+            border-top: 2px solid #334155;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ticker-label {
+            background-color: #0284c7;
+            color: #fff;
+            padding: 0 30px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            font-size: 2.5vh;
+            font-weight: 500;
+            white-space: nowrap;
+            z-index: 2;
+            box-shadow: 4px 0 8px rgba(0,0,0,0.3);
+        }
+
+        .ticker-wrapper {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker-content {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: ticker 40s linear infinite;
+            font-size: 3vh;
+            font-weight: 400;
+            color: #fef08a;
+        }
+
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- 1. 頂部 (10%) -->
+        <header class="header-section">
+            <div class="header-left">
+                <img src="logo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
+                <div class="header-title">
+                    <h1>黃鳳翎管理處實時資訊板</h1>
+                </div>
+            </div>
+            <!-- 日期與時間同列顯示 -->
+            <div class="datetime-display">
+                <div class="date-text" id="date">--年--月--日 星期--</div>
+                <div class="time-text">
+                    <span class="time-hm" id="time-hm">00:00</span><span class="time-sec" id="time-sec">:00</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 2. 中間核心區 (82%) -->
+        <div class="main-content">
+            
+            <!-- 左欄：主 Google Slide (75%) -->
+            <main class="slide-section">
+                <iframe src="https://docs.google.com/presentation/d/1_WdXdNJF2Njo7pVTiZPvmJCA2kuTuCZkOSXbTsTcMVE/embed?start=true&loop=true&delayms=5000&rm=minimal" 
+                        allowfullscreen="true" 
+                        mozallowfullscreen="true" 
+                        webkitallowfullscreen="true">
+                </iframe>
+            </main>
+
+            <!-- 右欄：資訊側邊欄 (25%) -->
+            <aside class="sidebar-section">
+                
+                <!-- 大輪播容器：三面板循環輪流顯示 -->
+                <div class="weather-carousel-container">
+                    
+                    <!-- 面板 1：上環天氣 + 4天預報 (預設 active) -->
+                    <div class="carousel-item active panel-a-layout" id="panel-weather">
+                        <div class="current-weather-card">
+                            <div class="c-title">上環現時天氣</div>
+                            <div class="c-main">
+                                <div class="c-icon">
+                                    <img id="c-icon-img" src="https://www.hko.gov.hk/images/wxicon/pic50.png" alt="天氣">
+                                </div>
+                                <div class="c-temp" id="c-temp">--°C</div>
+                            </div>
+                            <div class="c-desc" id="c-desc">相對濕度 --%</div>
+                        </div>
+
+                        <div class="forecast-section">
+                            <div class="carousel-title">4天天氣預報</div>
+                            <div class="forecast-grid" id="forecast-grid">
+                                <!-- 由 JavaScript 注入 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 面板 2：Windy 實時風向 -->
+                    <div class="carousel-item panel-iframe-layout" id="panel-wind">
+                        <div class="carousel-title">實時風向 (香港)</div>
+                        <div class="windy-wrapper">
+                            <!-- Overlay 為 wind -->
+                            <iframe src="https://embed.windy.com/embed2.html?lat=22.3&lon=114.16&zoom=9&level=surface&overlay=wind&menu=&message=&marker=&calendar=&pressure=&type=map&location=coordinates&detail=&detailLat=22.3&detailLon=114.16&metricWind=km%2Fh&metricTemp=%C2%B0C" style="pointer-events: none;"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- 面板 3：Windy 實時雷達 -->
+                    <div class="carousel-item panel-iframe-layout" id="panel-radar">
+                        <div class="carousel-title">實時雷達圖像 (香港)</div>
+                        <div class="windy-wrapper">
+                            <!-- Overlay 為 radar -->
+                            <iframe src="https://embed.windy.com/embed2.html?lat=22.3&lon=114.16&zoom=9&level=surface&overlay=radar&menu=&message=&marker=&calendar=&pressure=&type=map&location=coordinates&detail=&detailLat=22.3&detailLon=114.16&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1" style="pointer-events: none;"></iframe>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 下方模塊：迷你版 Google Slide -->
+                <div class="mini-slide-card">
+                    <iframe src="https://docs.google.com/presentation/d/e/2PACX-1vSci-fWx6bxlKzmQ6gtg1_M5Ygbl_qcIuo6WDDJZSLBHpulG4b-GTlj8ifL442VLAs_Y2IbjgKkKUXF/embed?start=true&loop=true&delayms=15000&rm=minimal" 
+                            allowfullscreen="true" 
+                            mozallowfullscreen="true" 
+                            webkitallowfullscreen="true">
+                    </iframe>
+                </div>
+
+            </aside>
+        </div>
+
+        <!-- 3. 底部 (8%) -->
+        <footer class="ticker-bar">
+            <div class="ticker-label">天氣消息</div>
+            <div class="ticker-wrapper">
+                <div class="ticker-content" id="ticker-text">
+                    正在載入香港天文台最新天氣消息及天氣報告...
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- 1. 時鐘與日期處理 ---
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            document.getElementById('time-hm').textContent = `${hours}:${minutes}`;
+            document.getElementById('time-sec').textContent = `:${seconds}`;
+
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const dayStr = days[now.getDay()];
+            document.getElementById('date').textContent = `${year}年${month}月${date}日 ${dayStr}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 2. 面板輪播邏輯 (每 15 秒切換，支援多個面板循環) ---
+        let currentCarouselIndex = 0;
+        function rotateCarousel() {
+            const panels = document.querySelectorAll('.carousel-item');
+            
+            // 移除當前 active 狀態
+            panels[currentCarouselIndex].classList.remove('active');
+            
+            // 計算下一個面板的索引 (如果到了最後一個，就回到第 0 個)
+            currentCarouselIndex = (currentCarouselIndex + 1) % panels.length;
+            
+            // 加入新的 active 狀態
+            panels[currentCarouselIndex].classList.add('active');
+        }
+        // 設定每 15 秒 (15000 毫秒) 執行一次輪播
+        setInterval(rotateCarousel, 15000); 
+
+        // --- 3. 香港天文台 API 處理 ---
+        async function fetchHKOWeather() {
+            try {
+                const fndRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
+                const fndData = await fndRes.json();
+                
+                const warnRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc');
+                const warnData = await warnRes.json();
+
+                const rhrRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
+                const rhrData = await rhrRes.json();
+
+                renderCurrentWeather(rhrData);
+                if (fndData && fndData.weatherForecast) {
+                    renderForecast(fndData.weatherForecast);
+                }
+
+                updateTicker(warnData, rhrData, fndData.generalSituation);
+
+            } catch (error) {
+                console.warn("無法取得天文台連線，顯示後備預設數據:", error);
+                renderFallbackData();
+            }
+        }
+
+        function renderCurrentWeather(rhrData) {
+            if (!rhrData) return;
+            const tempStations = (rhrData.temperature && rhrData.temperature.data) ? rhrData.temperature.data : [];
+            const targetTempObj = tempStations.find(d => d.place === "上環") ||
+                                  tempStations.find(d => d.place === "中環碼頭") ||
+                                  tempStations.find(d => d.place === "香港公園") ||
+                                  tempStations[0];
+            if (targetTempObj) {
+                document.getElementById('c-temp').textContent = `${targetTempObj.value}°C`;
+            }
+
+            const humStations = (rhrData.humidity && rhrData.humidity.data) ? rhrData.humidity.data : [];
+            const targetHumObj = humStations.find(d => d.place === "香港天文台") || humStations[0];
+            if (targetHumObj) {
+                document.getElementById('c-desc').textContent = `相對濕度 ${targetHumObj.value}%`;
+            }
+
+            if (rhrData.icon && rhrData.icon.length > 0) {
+                document.getElementById('c-icon-img').src = `https://www.hko.gov.hk/images/wxicon/pic${rhrData.icon[0]}.png`;
+            }
+        }
+
+        // 渲染 4 天預報卡片
+        function renderForecast(forecastList) {
+            const grid = document.getElementById('forecast-grid');
+            grid.innerHTML = ''; 
+
+            const daysToRender = forecastList.slice(0, 4); 
+
+            daysToRender.forEach(day => {
+                const dateStr = day.forecastDate;
+                const formattedDate = `${dateStr.substring(6, 8)}/${dateStr.substring(4, 6)}`;
+                const iconUrl = `https://www.hko.gov.hk/images/wxicon/pic${day.ForecastIcon}.png`;
+
+                const card = document.createElement('div');
+                card.className = 'forecast-card';
+                card.innerHTML = `
+                    <div class="f-date-day">${formattedDate} ${day.week.replace("星期","")}</div>
+                    <div class="f-main">
+                        <div class="f-icon">
+                            <img src="${iconUrl}" alt="天氣" onerror="this.src='https://www.hko.gov.hk/images/wxicon/pic50.png'">
+                        </div>
+                        <div class="f-temp">${day.forecastMintemp.value}°-${day.forecastMaxtemp.value}°</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateTicker(warnData, rhrData, generalSituation) {
+            let messages = [];
+            if (warnData && Object.keys(warnData).length > 0) {
+                for (let key in warnData) {
+                    if (warnData[key].name) {
+                        messages.push(`【現正生效警告】${warnData[key].name} - ${warnData[key].instruction || ''}`);
+                    }
+                }
+            }
+            if (rhrData && rhrData.temperature && rhrData.temperature.data) {
+                const hkTemp = rhrData.temperature.data.find(d => d.place === "香港天文台") || rhrData.temperature.data[0];
+                if (hkTemp) { messages.push(`目前天文台總部氣溫：${hkTemp.value}°C`); }
+            }
+            if (rhrData && rhrData.specialTips && rhrData.specialTips.length > 0) {
+                rhrData.specialTips.forEach(tip => messages.push(`【特別天氣提示】${tip}`));
+            }
+            if (generalSituation) { messages.push(`【天氣概況】${generalSituation}`); }
+
+            const tickerEl = document.getElementById('ticker-text');
+            if (messages.length > 0) {
+                tickerEl.textContent = messages.join(" ｜ ") + " ｜ ";
+            } else {
+                tickerEl.textContent = "現時本港並無發出任何天氣警告信號。請留意管理處最新通告。";
+            }
+        }
+
+        function renderFallbackData() {
+            document.getElementById('c-temp').textContent = "28°C";
+            document.getElementById('c-desc').textContent = "相對濕度 78%";
+            const grid = document.getElementById('forecast-grid');
+            grid.innerHTML = '';
+            const days = ['一', '二', '三', '四'];
+            for (let i = 0; i < 4; i++) {
+                grid.innerHTML += `
+                    <div class="forecast-card">
+                        <div class="f-date-day">0${i+1}/07 ${days[i]}</div>
+                        <div class="f-main">
+                            <div class="f-icon"><img src="https://www.hko.gov.hk/images/wxicon/pic51.png" alt="陽光"></div>
+                            <div class="f-temp">28°-33°</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        fetchHKOWeather();
+        setInterval(fetchHKOWeather, 900000);
+    </script>
+</body>
+</html>
