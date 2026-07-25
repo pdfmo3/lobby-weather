@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMO(3) 放假看板</title>
+    <style>
+        /* 基礎重置與全螢幕設定 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+            background-color: #0f172a; 
+        }
+
+        /* 上方 20% 固定標題欄 */
+        .header {
+            height: 20vh;
+            width: 100%;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+            color: #ffffff;
+            display: flex;
+            justify-content: center; /* 置中對齊 */
+            align-items: center;     /* 垂直置中 */
+            gap: 3vw;                /* 兩段文字之間的距離 */
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border-bottom: 3px solid #3b82f6;
+            position: relative;
+            z-index: 10;
+            padding: 0 2vw;
+        }
+
+        /* 統一字體：極限尺寸 + 移除 BOLD 改為標準正常粗細 + 磨砂質感 */
+        .header-text {
+            font-size: 13vh; /* 維持您覺得合適的極限尺寸 */
+            line-height: 1;
+            font-weight: 400; /* 移除 BOLD，改為標準正常粗細 (Normal) */
+            background: rgba(255, 255, 255, 0.12);
+            padding: 1vh 2.5vw;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.15);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            white-space: nowrap; /* 確保文字絕對不換行 */
+        }
+
+        /* 中間的分隔線 */
+        .divider {
+            font-size: 10vh;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 300;
+        }
+
+        /* 強調動態日期的顏色 */
+        #current-date {
+            color: #60a5fa;
+            text-shadow: 0 0 15px rgba(96, 165, 250, 0.4);
+        }
+
+        /* 下方 80% Google Slide 區塊 */
+        .content-container {
+            height: 80vh;
+            width: 100%;
+            background-color: #000000;
+            position: relative;
+            overflow: hidden; /* 確保隱藏任何溢出的邊界或滾動條 */
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-text">FMO(3) VL</div>
+        <div class="divider">|</div>
+        <div class="header-text">
+            <span id="current-date">--/--</span>&nbsp;至&nbsp;7/8
+        </div>
+    </div>
+
+    <div class="content-container">
+        <iframe 
+            src="https://docs.google.com/presentation/d/e/2PACX-1vRT5hPQgsMh9AOixftGdFdTmD22DkfengFbAF-6LSUUQKxyMp3ZPgQeayt7AI2jjCaVIToSya9bn-mU/embed?start=true&loop=true&delayms=15000&rm=minimal" 
+            frameborder="0"
+            allowfullscreen="true" 
+            mozallowfullscreen="true" 
+            webkitallowfullscreen="true">
+        </iframe>
+
+
+    </div>
+
+    <script>
+        function updateDate() {
+            try {
+                const today = new Date();
+                const day = today.getDate();        // 單位數為 D，兩位數為 DD
+                const month = today.getMonth() + 1; // 取得月份 (1-12)
+                
+                // 更新頁面上的文字內容
+                document.getElementById('current-date').innerText = day + '/' + month;
+            } catch (error) {
+                console.error("更新日期時出錯:", error);
+            }
+        }
+
+        // 頁面載入時立即執行更新
+        updateDate();
+
+        // 每隔 1 小時自動重新檢查並更新一次日期
+        setInterval(updateDate, 3600000);
+    </script>
+
+</body>
+</html>
